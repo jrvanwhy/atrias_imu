@@ -1,11 +1,6 @@
 classdef BoomCoords < handle
 	methods
-		function [yaw] = update(this, local_orient, state, boomYaw)
-			% Do a bit more calibration during alignment.
-			if state == IMUSysState.ALIGN
-				this.yawOff = boomYaw - this.yaw;
-			end
-
+		function [roll,yaw,localY_world] = update(this, local_orient, state, boomRoll, boomYaw)
 			% For yaw, we rotate the local X vector into the world frame.
 			% We use a cross product to smoothly update the yaw value without jumping
 			localX_world = local_orient.rot([1; 0; 0]);
@@ -17,11 +12,27 @@ classdef BoomCoords < handle
 
 			% Set this function's yaw output, as it's not directly derived.
 			yaw = this.yaw + this.yawOff;
+
+			% Roll section. Simply project the local Y vector into the world frame,
+			% then look at the resulting Z coordinate.
+			localY_world = local_orient.rot([0; 1; 0]);
+			roll         = asin(localY_world(3)) + this.rollOff;
+
+			% Do a bit more calibration during alignment.
+			if this.prevState == IMUSysState.ALIGN
+				this.yawOff = boomYaw - this.yaw;
+				this.rollOff = this.rollOff + boomRoll - roll;
+			end
+
+			% Save the state for the next iteration
+			this.prevState = state;
 		end
 	end
 
 	properties
+		prevState = 0
 		yaw    = 0
 		yawOff = 0
+		rollOff = 0
 	end
 end
