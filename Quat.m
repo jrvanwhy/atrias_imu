@@ -16,19 +16,24 @@ classdef Quat < handle
 			end
 		end
 
+		% Quaternion conjugation function
+		function C = conj(this)
+			C = Quat(this.vals .* [1; -1; -1; -1]);
+		end
+
 		% Quaternion multiplication function
 		function C = mtimes(A, B)
-			C= Quat([ A.vals(1)*B.vals(1) - A.vals(2)*B.vals(2) - A.vals(3)*B.vals(3) - A.vals(4)*B.vals(4)
-			          A.vals(1)*B.vals(2) + A.vals(2)*B.vals(1) + A.vals(3)*B.vals(4) - A.vals(4)*B.vals(3)
-			          A.vals(1)*B.vals(3) - A.vals(2)*B.vals(4) + A.vals(3)*B.vals(1) + A.vals(4)*B.vals(2)
-			          A.vals(1)*B.vals(4) + A.vals(2)*B.vals(3) - A.vals(3)*B.vals(2) + A.vals(4)*B.vals(1) ]);
+			C = Quat([ A.vals(1)*B.vals(1) - A.vals(2)*B.vals(2) - A.vals(3)*B.vals(3) - A.vals(4)*B.vals(4)
+			           A.vals(1)*B.vals(2) + A.vals(2)*B.vals(1) + A.vals(3)*B.vals(4) - A.vals(4)*B.vals(3)
+			           A.vals(1)*B.vals(3) - A.vals(2)*B.vals(4) + A.vals(3)*B.vals(1) + A.vals(4)*B.vals(2)
+			           A.vals(1)*B.vals(4) + A.vals(2)*B.vals(3) - A.vals(3)*B.vals(2) + A.vals(4)*B.vals(1) ]);
 		end
 
 		% Function to rotate the given vector by the rotation represented
 		% by this quaternion
 		function vec = rot(this, vec)
-			% TODO: This
-			error('TODO')
+			outQuat = this * Quat([0; vec(:)]) * this.conj;
+			vec     = outQuat.vals(2:4);
 		end
 	end
 
