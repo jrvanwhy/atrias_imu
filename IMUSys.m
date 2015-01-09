@@ -1,5 +1,12 @@
 classdef IMUSys < handle
 	methods
+		% Constructor -- does some basic init that can't directly be done to the properties themselves
+		function this = IMUSys
+			% The local orientation is initially equal to the world orientation.
+			% This IMU is two simple rotations away from the local orientation.
+			this.imu_orient = Quat([0; pi/4; 0]) * Quat([-pi/2; 0; 0]);
+		end
+
 		% Initialization state update function. Waits until we have new data.
 		% Note that alignment should not begin until the second cycle of data
 		% as the first cycle can have a large spike.
@@ -30,11 +37,32 @@ classdef IMUSys < handle
 			end
 
 			% Alignment complete!
-			% TODO: Calculate and apply the necessary orientation correction.
-			% TODO: Make sure that this iteration's data is good!!!
 
 			% Set the state for the next iteration
 			this.state = IMUSysState.RUN;
+
+			% First, normalize the accumulated acceleration vector
+			this.align_accum = this.align_accum / norm(this.align_accum);
+
+			% Rotate the vector using the previous-known IMU orientation.
+			this.align_accum = this.imu_orient.rot(this.align_accum);
+
+			% Use a cross product to compute the rotation axis for the
+			% orientation correction. This will have a length which is the sin
+			% of the necessary correction rotation angle.
+			orient_corr = cross(this.align_accum, [0; 0; 1]);
+
+			% Catch the (rare!) case where no correction is necessary.
+			if orient_corr == 0
+				return
+			end
+
+			% Turn the previous cross product into a true axis and angle
+			angle = asin(norm(orient_corr));
+			axis  = orient_corr / norm(orient_corr);
+
+			% Apply the correction to the orientation
+			this.imu_orient = Quat(angle * axis) * this.imu_orient;
 		end
 
 		% Main IMU operation state. TODO
@@ -66,6 +94,9 @@ classdef IMUSys < handle
 	properties
 		% Accumulator for the accelerometer-based leveling for aligment
 		align_accum = zeros(3, 1);
+
+		% The current orientation of the IMU coordinate frame (Quat)
+		imu_orient
 
 		% Previous sequence value; kept to detect when new data is available and
 		% to begin alignment at the correct time.
