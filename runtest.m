@@ -19,9 +19,9 @@ for iter = 1:numel(time)
 	if mod(iter, 1000) == 0
 		disp(['Completion: ' num2str(iter / numel(time))])
 	end
-	[~,local_orient] = imu.update(A.controllerData(iter,1:3), A.controllerData(iter,4:6), A.controllerData(iter,7), .001);
+	[~,local_orient,state] = imu.update(A.controllerData(iter,1:3), A.controllerData(iter,4:6), A.controllerData(iter,7), .001);
 	imu_states(iter) = imu.state;
 	align_accums(:, iter) = imu.align_accum;
 	accum_norms(iter)     = norm(imu.align_accum);
-	yaws(iter) = bc.update(local_orient);
+	yaws(iter) = bc.update(local_orient, state, A.boomYawAngle(iter));
 end
