@@ -10,6 +10,7 @@ A = AtriasPostProcess(state, time);
 imu_states = zeros(numel(time), 1);
 align_accums = zeros(3, numel(time));
 accum_norms  = zeros(numel(time), 1);
+test_out     = zeros(3, numel(time));
 
 % Simulate!!!
 for iter = 1:numel(time)

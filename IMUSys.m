@@ -65,9 +65,19 @@ classdef IMUSys < handle
 			this.imu_orient = Quat(angle * axis) * this.imu_orient;
 		end
 
-		% Main IMU operation state. TODO
-		function run(this)
-			% TODO: this
+		% Main IMU operation state.
+		function run(this, gyros, seq)
+			% Compute the size of the seq increment (note that seq wraps modulo 128).
+			dseq = mod(int8(seq) - int8(this.prevSeq), 128);
+
+			% Rescale the gyro delta angles using dseq to make up for any missed cycles
+			gyros = double(dseq) * gyros;
+
+			% Rotate the delta angles from IMU coordinates into world coordinates
+			gyros_world = this.imu_orient.rot(gyros);
+
+			% Execute the update to imu_orient
+			this.imu_orient = Quat(gyros_world) * this.imu_orient;
 		end
 
 		% The main IMU update loop; contains a state machine to handle alignment
@@ -82,7 +92,7 @@ classdef IMUSys < handle
 						this.align(accels(:), sample_time)
 
 					case IMUSysState.RUN
-						this.run
+						this.run(gyros, seq)
 				end
 
 				% Update our stored values for the next iteration

@@ -29,6 +29,12 @@ classdef Quat < handle
 			           A.vals(1)*B.vals(4) + A.vals(2)*B.vals(3) - A.vals(3)*B.vals(2) + A.vals(4)*B.vals(1) ]);
 		end
 
+		% Function to perform a vector rotation by the inverse of the rotation represented by this quaternion.
+		function vec = invRot(this, vec)
+			outQuat = this.conj * Quat([0; vec(:)]) * this;
+			vec     = outQuat.vals(2:4);
+		end
+
 		% Function to rotate the given vector by the rotation represented
 		% by this quaternion
 		function vec = rot(this, vec)
