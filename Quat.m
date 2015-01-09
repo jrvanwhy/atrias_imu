@@ -47,6 +47,11 @@ classdef Quat < handle
 			outQuat = this.mat * vecmat * this.mat';
 			vec     = [imag(outQuat(1)); real(outQuat(3)); imag(outQuat(3))];
 		end
+
+		% Grab this quaternion as a vector of 4 real values
+		function vals = getVals(this)
+			vals = [real(this.mat(1)); imag(this.mat(1)); real(this.mat(3)); imag(this.mat(3))];
+		end
 	end
 
 	properties

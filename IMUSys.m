@@ -73,9 +73,12 @@ classdef IMUSys < handle
 		end
 
 		% Main IMU operation state.
-		function run(this, gyros, seq)
+		function run(this, gyros, seq, sample_time)
 			% Compute the size of the seq increment (note that seq wraps modulo 128).
 			dseq = mod(int8(seq) - int8(this.prevSeq), 128);
+
+			% Compute the angular velocities
+			this.ang_vel = gyros / sample_time;
 
 			% Rescale the gyro delta angles using dseq to make up for any missed cycles
 			gyros = double(dseq) * gyros;
@@ -88,7 +91,8 @@ classdef IMUSys < handle
 		end
 
 		% The main IMU update loop; contains a state machine to handle alignment
-		function [imu_orient, local_orient, state] = update(this, gyros, accels, seq, sample_time)
+		% ang_vel is in IMU coordinates!
+		function [imu_orient, local_orient, ang_vel, state] = update(this, gyros, accels, seq, sample_time)
 			% Run the state machine iff we have new data
 			if seq ~= this.prevSeq
 				switch this.state
@@ -99,7 +103,7 @@ classdef IMUSys < handle
 						this.align(gyros(:), accels(:), sample_time)
 
 					case IMUSysState.RUN
-						this.run(gyros(:), seq)
+						this.run(gyros(:), seq, sample_time)
 				end
 
 				% Update our stored values for the next iteration
@@ -109,6 +113,7 @@ classdef IMUSys < handle
 			% Update the function outputs
 			imu_orient   = this.imu_orient;
 			local_orient = imu_orient * this.local_rel_imu;
+			ang_vel      = this.ang_vel;
 			state        = this.state;
 		end
 	end
@@ -116,6 +121,9 @@ classdef IMUSys < handle
 	properties
 		% Accumulator for the accelerometer-based leveling for aligment
 		align_accum = zeros(3, 1);
+
+		% Current angular velocity, in IMU coordinates
+		ang_vel = [0; 0; 0];
 
 		% The current orientation of the IMU coordinate frame (Quat)
 		imu_orient
