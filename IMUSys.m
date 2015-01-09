@@ -2,9 +2,12 @@ classdef IMUSys < handle
 	methods
 		% Constructor -- does some basic init that can't directly be done to the properties themselves
 		function this = IMUSys
-			% The local orientation is initially equal to the world orientation.
 			% This IMU is two simple rotations away from the local orientation.
-			this.imu_orient = Quat([0; pi/4; 0]) * Quat([-pi/2; 0; 0]);
+			this.imu_rel_local = Quat([0; pi/4; 0]) * Quat([-pi/2; 0; 0]);
+			this.local_rel_imu = this.imu_rel_local.conj();
+
+			% The local orientation is initially equal to the world orientation.
+			this.imu_orient = this.imu_rel_local;
 		end
 
 		% Initialization state update function. Waits until we have new data.
@@ -81,7 +84,7 @@ classdef IMUSys < handle
 		end
 
 		% The main IMU update loop; contains a state machine to handle alignment
-		function update(this, gyros, accels, seq, sample_time)
+		function [imu_orient, local_orient, state] = update(this, gyros, accels, seq, sample_time)
 			% Run the state machine iff we have new data
 			if seq ~= this.prevSeq
 				switch this.state
@@ -98,6 +101,11 @@ classdef IMUSys < handle
 				% Update our stored values for the next iteration
 				this.prevSeq = seq;
 			end
+
+			% Update the function outputs
+			imu_orient   = this.imu_orient;
+			local_orient = imu_orient * this.local_rel_imu;
+			state        = this.state;
 		end
 	end
 
@@ -107,6 +115,12 @@ classdef IMUSys < handle
 
 		% The current orientation of the IMU coordinate frame (Quat)
 		imu_orient
+
+		% Orientation of the IMU within the ATRIAS coordinate frame
+		imu_rel_local
+
+		% Similarly, the orientation of the ATRIAS coordinate frame in the IMU frame
+		local_rel_imu
 
 		% Previous sequence value; kept to detect when new data is available and
 		% to begin alignment at the correct time.
