@@ -25,11 +25,15 @@ classdef IMUSys < handle
 		end
 
 		% Alignment update function. This accumulates accelerometer readings in order to properly level the IMU at startup.
-		function align(this, accels, sample_time)
+		function align(this, gyros, accels, sample_time)
 			this.align_accum = this.align_accum + accels;
 
-			% TODO: Catch a bad alignment ("large" accelerations or angular velocities)
-			% and enter an "invalid alignment" state.
+			% If the gyros or accelerometers read something too large,
+			% terminate alignment and indicate the error
+			if norm(gyros) >= 1e-6 || abs(norm(accels) - 1) >= .02
+				this.state = IMUSysState.FAIL_ALIGN;
+				return
+			end
 
 			% Quit if the alignment isn't done yet.
 			% To avoid needing an extra state variable, just accumulate
@@ -92,10 +96,10 @@ classdef IMUSys < handle
 						this.init(seq)
 
 					case IMUSysState.ALIGN
-						this.align(accels(:), sample_time)
+						this.align(gyros(:), accels(:), sample_time)
 
 					case IMUSysState.RUN
-						this.run(gyros, seq)
+						this.run(gyros(:), seq)
 				end
 
 				% Update our stored values for the next iteration

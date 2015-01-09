@@ -16,8 +16,8 @@ align_accums = zeros(3,   len);
 accum_norms  = zeros(len, 1  );
 test_out     = zeros(3,   len);
 rolls        = zeros(len, 1  );
+pitches      = zeros(len, 1  );
 yaws         = zeros(len, 1  );
-dbgs         = zeros(3,   len);
 
 % Simulate!!!
 for iter = 1:len
@@ -28,5 +28,5 @@ for iter = 1:len
 	imu_states(iter) = imu.state;
 	align_accums(:, iter) = imu.align_accum;
 	accum_norms(iter)     = norm(imu.align_accum);
-	[rolls(iter),yaws(iter),dbgs(:,iter)] = bc.update(local_orient, state2, A.boomRollAngle(iter), A.boomYawAngle(iter));
+	[rolls(iter),pitches(iter),yaws(iter)] = bc.update(local_orient, state2, A.boomRollAngle(iter), A.boomYawAngle(iter));
 end
