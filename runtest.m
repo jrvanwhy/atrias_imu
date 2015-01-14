@@ -36,7 +36,7 @@ for iter = 1:len
 	if mod(iter, 1000) == 0
 		disp(['Completion: ' num2str(iter / len)])
 	end
-	[imu_orient,local_orient,ang_vel,state2] = imu.update(A.controllerData(iter, 1:3), A.controllerData(iter, 4:6), A.controllerData(iter,7), .001);
+	[imu_orient,local_orient,ang_vel,state2] = imu.update(A.controllerData(iter, 1:3), A.controllerData(iter, 4:6), A.controllerData(iter,7), .001, 1 * 60 * 1000, 1e-6, .02);
 	imu_states(iter) = imu.state;
 	[rolls(iter),pitches(iter),yaws(iter),drolls(iter),dpitches(iter),dyaws(iter)] = ...
 		bc.update(imu_orient, local_orient, ang_vel, state2, A.boomRollAngle(iter), A.boomPitchAngle(iter), A.boomYawAngle(iter));
