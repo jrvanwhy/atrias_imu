@@ -57,23 +57,27 @@ classdef IMUSys2 < handle
 				return
 			end
 
+			this.align_step2
+
+			% No need to re-check here, as align_step2 has no failure modes
+
 
 			% Alignment was successful!
 			% Set the state for the next iteration.
 			this.state = IMUSysState.RUN;
 		end
 
-		% Step 1 of the alignment process
+		% Step 1 of the alignment process (leveling)
 		function align_step1(this)
-			% First, normalize the accumulated acceleration vector
-			u_g = this.align_gm / norm(this.align_gm);
+			% First, rotate the acceleration vector using the previous-known IMU orientation.
+			ghat = this.imu_orient.rot(this.align_gm);
 
-			% Rotate the vector using the previous-known IMU orientation.
-			ghat = this.imu_orient.rot(u_g);
+			% Next, normalize the accumulated acceleration vector
+			u_g = ghat / norm(ghat);
 
 			% If a correction greater than (or equal to) 90 degrees is necessary, fail.
 			% (robot upside down?)
-			if ghat(3) <= 0
+			if u_g(3) <= 0
 				this.fail_reas = IMUFailReason.BAD_GACCEL;
 				return
 			end
@@ -81,7 +85,7 @@ classdef IMUSys2 < handle
 			% Use a cross product to compute the rotation axis for the
 			% orientation correction. This will have a length which is the sin
 			% of the necessary correction rotation angle.
-			a = cross(ghat, [0; 0; 1]);
+			a = cross(u_g, [0; 0; 1]);
 
 			% Catch the (rare!) case where no correction is necessary.
 			if all(a == 0)
@@ -94,6 +98,23 @@ classdef IMUSys2 < handle
 
 			% Apply the correction to the orientation
 			this.imu_orient = Quat(theta * axis) * this.imu_orient;
+		end
+
+		% Step 2 of the alignment process (heading)
+		function align_step2(this)
+			% Rotate the rotation vector into world coordinates
+			rhat = this.imu_orient.rot(this.align_rm);
+
+			% Compute the rotation angle for the correction
+			theta = atan2(rhat(1), rhat(2));
+
+			% Check that the angle is not zero (unlikely, but possible).
+			if theta == 0
+				return
+			end
+
+			% Perform the update
+			this.imu_orient = Quat(theta * [0; 0; 1]) * this.imu_orient;
 		end
 
 		% Main IMU operation state.
