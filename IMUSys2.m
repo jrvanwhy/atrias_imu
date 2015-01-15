@@ -122,14 +122,20 @@ classdef IMUSys2 < handle
 			% Compute the size of the seq increment (note that seq wraps modulo 128).
 			dseq = mod(int16(seq) - int16(this.prevSeq), int16(128));
 
-			% Compute the angular velocities
-			this.ang_vel = gyros / sample_time;
-
-			% Rescale the gyro delta angles using dseq to make up for any missed cycles
-			gyros = double(dseq) * gyros;
+			% Remove the gyro bias from the measurements
+			gyros = gyros - this.gyro_bias;
 
 			% Rotate the delta angles from IMU coordinates into world coordinates
 			gyros_world = this.imu_orient.rot(gyros);
+
+			% Remove the Earth's rotation from the gyro measurements
+			gyros_world = gyros_world - this.earth_rot;
+
+			% Compute the angular velocities
+			this.ang_vel = gyros_world / sample_time;
+
+			% Rescale the gyro delta angles using dseq to make up for any missed cycles
+			gyros_world = double(dseq) * gyros_world;
 
 			% Execute the update to imu_orient
 			this.imu_orient = Quat(gyros_world) * this.imu_orient;
@@ -166,17 +172,23 @@ classdef IMUSys2 < handle
 
 	properties
 		% Accumulators for accelerometers and gyros for alignment
-		align_gm = zeros(3, 1)
-		align_rm = zeros(3, 1)
+		align_gm = [0; 0; 0]
+		align_rm = [0; 0; 0]
 
 		% Elapsed alignment duration, in units of sample_time
 		align_ticks = 0
 
-		% Current angular velocity, in IMU coordinates
+		% Current angular velocity, in world coordinates
 		ang_vel = [0; 0; 0]
+
+		% Earth's angular velocity, radians per cycle
+		earth_rot = [0; 0; 0]
 
 		% Explanation for an alignment failure
 		fail_reas = IMUFailReason.NONE
+
+		% Gyro bias (radians/cycle)
+		gyro_bias = [0; 0; 0]
 
 		% The current orientation of the IMU coordinate frame (Quat)
 		imu_orient

@@ -2,7 +2,7 @@ clear all
 close all
 
 imu = IMUSys2;
-bc  = BoomCoords;
+bc  = BoomCoords2;
 
 latitude = 44.5673031; % The DRL's latitude, according to Google Maps
 
