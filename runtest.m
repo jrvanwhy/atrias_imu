@@ -1,17 +1,19 @@
 clear all
 close all
 
-imu = IMUSys2;
-bc  = BoomCoords2;
+imu = IMUSys;
+bc  = BoomCoords;
 
-latitude = 44.5673031; % The DRL's latitude, according to Google Maps
+latitude = 44.5673031 * pi/180; % The DRL's latitude, according to Google Maps
+earth_rot_rate  = 7.292115e-5 * .001; % Earth's rotation rate, rad/millisecond. From WolframAlpha
+align_bias_tol  = 2e-8;               % Tolerance on the gyro bias. Radians per millisecond
 
 load('~/imu_test_walk')
 
-startTime = 2.023e6 - 1 * 60 * 1000;
+startTime = 2.023e6 - 2 * 60 * 1000;
 state = state(startTime:end, :);
 time  = time(startTime:end);
-len = 2 * 60 * 1000;
+len = 4 * 60 * 1000;
 state = state(1:len, :);
 time  = time(1:len);
 
@@ -36,7 +38,8 @@ for iter = 1:len
 	if mod(iter, 1000) == 0
 		disp(['Completion: ' num2str(iter / len)])
 	end
-	[imu_orient,local_orient,ang_vel,state2] = imu.update(A.controllerData(iter, 1:3), A.controllerData(iter, 4:6), A.controllerData(iter,7), .001, 1 * 60 * 1000, 1e-6, .02);
+	[imu_orient,local_orient,ang_vel,state2] = ...
+		imu.update(A.controllerData(iter, 1:3), A.controllerData(iter, 4:6), A.controllerData(iter,7), .001, 1 * 60 * 1000, 1e-6, .02, align_bias_tol, earth_rot_rate, latitude);
 	imu_states(iter) = imu.state;
 	[rolls(iter),pitches(iter),yaws(iter),drolls(iter),dpitches(iter),dyaws(iter)] = ...
 		bc.update(imu_orient, local_orient, ang_vel, state2, A.boomRollAngle(iter), A.boomPitchAngle(iter), A.boomYawAngle(iter));
