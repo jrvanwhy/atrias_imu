@@ -1,6 +1,9 @@
 clear all
 close all
 
+% Current state: Fast align location heading calculation
+% Result: 0.708192887894446 radians
+
 imu = IMUSys;
 bc  = BoomCoords;
 
@@ -10,12 +13,14 @@ align_bias_tol  = 2e-8;               % Tolerance on the gyro bias. Radians per 
 
 load('~/imu_test_walk')
 
-startTime = 2.023e6 - 2 * 60 * 1000;
+%startTime = 2.023e6 - 2 * 60 * 1000;
+startTime = 490000;
 state = state(startTime:end, :);
 time  = time(startTime:end);
-len = 4 * 60 * 1000;
-state = state(1:len, :);
-time  = time(1:len);
+%len = 4 * 60 * 1000;
+len = 500000;
+%state = state(1:len, :);
+%time  = time(1:len);
 
 A = AtriasPostProcess(state, time);
 
@@ -25,7 +30,6 @@ A = AtriasPostProcess(state, time);
 
 % Pre-allocate things
 imu_states   = zeros(len, 1  );
-test_out     = zeros(3,   len);
 rolls        = zeros(len, 1  );
 pitches      = zeros(len, 1  );
 yaws         = zeros(len, 1  );
@@ -39,7 +43,7 @@ for iter = 1:len
 		disp(['Completion: ' num2str(iter / len)])
 	end
 	[imu_orient,local_orient,ang_vel,state2] = ...
-		imu.update(A.controllerData(iter, 1:3), A.controllerData(iter, 4:6), A.controllerData(iter,7), .001, 1 * 60 * 1000, 1e-6, .02, align_bias_tol, earth_rot_rate, latitude);
+		imu.update(A.controllerData(iter, 1:3), A.controllerData(iter, 4:6), A.controllerData(iter,7), .001, len - 1000, 1e-6, .02, align_bias_tol, earth_rot_rate, latitude);
 	imu_states(iter) = imu.state;
 	[rolls(iter),pitches(iter),yaws(iter),drolls(iter),dpitches(iter),dyaws(iter)] = ...
 		bc.update(imu_orient, local_orient, ang_vel, state2, A.boomRollAngle(iter), A.boomPitchAngle(iter), A.boomYawAngle(iter));
