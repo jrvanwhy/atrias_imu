@@ -3,8 +3,9 @@ close all
 
 % Current state: Fast align location heading calculation
 % Result: 0.708192887894446 radians
+heading = 0.708192887894446;
 
-imu = IMUSys;
+imu = IMUSys(.001);
 bc  = BoomCoords;
 
 latitude = 44.5673031 * pi/180; % The DRL's latitude, according to Google Maps
@@ -14,13 +15,13 @@ align_bias_tol  = 2e-8;               % Tolerance on the gyro bias. Radians per 
 load('~/imu_test_walk')
 
 %startTime = 2.023e6 - 2 * 60 * 1000;
-startTime = 490000;
+startTime = 1;
 state = state(startTime:end, :);
 time  = time(startTime:end);
 %len = 4 * 60 * 1000;
-len = 500000;
-%state = state(1:len, :);
-%time  = time(1:len);
+len = numel(time);
+state = state(1:len, :);
+time  = time(1:len);
 
 A = AtriasPostProcess(state, time);
 
@@ -42,9 +43,9 @@ for iter = 1:len
 	if mod(iter, 1000) == 0
 		disp(['Completion: ' num2str(iter / len)])
 	end
-	[imu_orient,local_orient,ang_vel,state2] = ...
-		imu.update(A.controllerData(iter, 1:3), A.controllerData(iter, 4:6), A.controllerData(iter,7), .001, len - 1000, 1e-6, .02, align_bias_tol, earth_rot_rate, latitude);
+	[local_orient,ang_vel,state2] = ...
+		imu.update(A.controllerData(iter, 1:3), A.controllerData(iter, 4:6), A.controllerData(iter,7), 119, latitude, heading);
 	imu_states(iter) = imu.state;
 	[rolls(iter),pitches(iter),yaws(iter),drolls(iter),dpitches(iter),dyaws(iter)] = ...
-		bc.update(imu_orient, local_orient, ang_vel, state2, A.boomRollAngle(iter), A.boomPitchAngle(iter), A.boomYawAngle(iter));
+		bc.update(local_orient, ang_vel);
 end
