@@ -30,13 +30,14 @@ A = AtriasPostProcess(state, time);
 %len = numel(time);
 
 % Pre-allocate things
-imu_states   = zeros(len, 1  );
-rolls        = zeros(len, 1  );
-pitches      = zeros(len, 1  );
-yaws         = zeros(len, 1  );
-drolls       = zeros(len, 1  );
-dpitches     = zeros(len, 1  );
-dyaws        = zeros(len, 1  );
+imu_states   = zeros(len, 1);
+fail_reas    = zeros(len, 1);
+rolls        = zeros(len, 1);
+pitches      = zeros(len, 1);
+yaws         = zeros(len, 1);
+drolls       = zeros(len, 1);
+dpitches     = zeros(len, 1);
+dyaws        = zeros(len, 1);
 
 % Simulate!!!
 for iter = 1:len
@@ -46,6 +47,7 @@ for iter = 1:len
 	[local_orient,ang_vel,state2] = ...
 		imu.update(A.controllerData(iter, 1:3), A.controllerData(iter, 4:6), A.controllerData(iter,7), A.controllerData(iter, 8), latitude, heading);
 	imu_states(iter) = imu.state;
+	fail_reas(iter)  = imu.fail_reas;
 	[rolls(iter),pitches(iter),yaws(iter),drolls(iter),dpitches(iter),dyaws(iter)] = ...
 		bc.update(local_orient, ang_vel);
 end
