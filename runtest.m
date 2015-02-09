@@ -5,8 +5,8 @@ close all
 % Result: 0.708192887894446 radians
 heading = 0.708192887894446;
 
-imu = IMUSys(.001);
-bc  = BoomCoords;
+imusys = imu.IMUSys(.001);
+bc     = imu.BoomCoords;
 
 latitude = 44.5673031 * pi/180; % The DRL's latitude, according to Google Maps
 earth_rot_rate  = 7.292115e-5 * .001; % Earth's rotation rate, rad/millisecond. From WolframAlpha
@@ -30,7 +30,7 @@ A = AtriasPostProcess(state, time);
 %len = numel(time);
 
 % Pre-allocate things
-imu_states   = zeros(len, 1);
+imusys_states   = zeros(len, 1);
 fail_reas    = zeros(len, 1);
 rolls        = zeros(len, 1);
 pitches      = zeros(len, 1);
@@ -45,9 +45,9 @@ for iter = 1:len
 		disp(['Completion: ' num2str(iter / len)])
 	end
 	[local_orient,ang_vel,state2] = ...
-		imu.update(A.controllerData(iter, 1:3), A.controllerData(iter, 4:6), A.controllerData(iter,7), A.controllerData(iter, 8), latitude, heading);
-	imu_states(iter) = imu.state;
-	fail_reas(iter)  = imu.fail_reas;
+		imusys.update(A.controllerData(iter, 1:3), A.controllerData(iter, 4:6), A.controllerData(iter,7), A.controllerData(iter, 8), latitude, heading);
+	imusys_states(iter) = imusys.state;
+	fail_reas(iter)  = imusys.fail_reas;
 	[rolls(iter),pitches(iter),yaws(iter),drolls(iter),dpitches(iter),dyaws(iter)] = ...
 		bc.update(local_orient, ang_vel);
 end
